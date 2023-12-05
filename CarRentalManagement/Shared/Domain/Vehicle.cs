@@ -16,6 +16,8 @@ namespace CarRentalManagement.Shared.Domain
         public int ColourId { get; set; }
         public virtual Colour? Colour { get; set; }
         public virtual List<Booking>? Bookings { get; set; }
+        
+        public virtual Make? Make { get; set; }
 
 
     }

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using CarRentalManagement.Server.Data;
 using CarRentalManagement.Shared.Domain;
 using CarRentalManagement.Server.IRepository;
+using System.Reflection.Metadata.Ecma335;
 
 namespace CarRentalManagement.Server.Controllers
 {
@@ -16,42 +17,25 @@ namespace CarRentalManagement.Server.Controllers
     public class VehiclesController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+
         public VehiclesController(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
-        // private readonly ApplicationDbContext _context;
-
-        //public VehiclesController(ApplicationDbContext context)
-        //{
-        //  _context = context;
-        //}
-
         // GET: api/Vehicles
         [HttpGet]
-        //public async Task<ActionResult<IEnumerable<Vehicle>>> GetVehicles()
         public async Task<IActionResult> GetVehicles()
-
         {
-            //if (_context.Vehicles == null)
-            //{
-            //    return NotFound();
-            // }
-            //return await _context.Vehicles.ToListAsync();
-            var vehicles = await _unitOfWork.Vehicles.GetAll();
-            return Ok(vehicles);
+            var Vehicles = await _unitOfWork.Vehicles.GetAll(includes: q => q.Include(x => x.Make).Include(x => x.Model).Include(x => x.Colour));
+            return Ok(Vehicles);
+
         }
 
         // GET: api/Vehicles/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Vehicle>> GetVehicle(int id)
+        public async Task<IActionResult> GetVehicle(int id)
         {
-            //if (_context.Vehicles == null)
-            //{
-            //  return NotFound();
-            //}
-            //var vehicle = await _context.Vehicles.FindAsync(id);
             var vehicle = await _unitOfWork.Vehicles.Get(q => q.Id == id);
 
             if (vehicle == null)
@@ -72,17 +56,13 @@ namespace CarRentalManagement.Server.Controllers
                 return BadRequest();
             }
 
-            //_context.Entry(vehicle).State = EntityState.Modified;
             _unitOfWork.Vehicles.Update(vehicle);
-
             try
             {
-                //await _context.SaveChangesAsync();
                 await _unitOfWork.Save(HttpContext);
             }
             catch (DbUpdateConcurrencyException)
             {
-                //if (!VehicleExists(id))
                 if (!await VehicleExists(id))
                 {
                     return NotFound();
@@ -101,12 +81,6 @@ namespace CarRentalManagement.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<Vehicle>> PostVehicle(Vehicle vehicle)
         {
-            //if (_context.Vehicles == null)
-            //{
-            //  return Problem("Entity set 'ApplicationDbContext.Vehicles'  is null.");
-            //}
-            //_context.Vehicles.Add(vehicle);
-            //await _context.SaveChangesAsync();
             await _unitOfWork.Vehicles.Insert(vehicle);
             await _unitOfWork.Save(HttpContext);
 
@@ -117,33 +91,23 @@ namespace CarRentalManagement.Server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVehicle(int id)
         {
-            //if (_context.Vehicles == null)
-            //{
-            //  return NotFound();
-            //}
-            //var vehicle = await _context.Vehicles.FindAsync(id);
-            var vehicle = await _unitOfWork.Vehicles.Get(q => q.Id == id);
 
+            var vehicle = await _unitOfWork.Vehicles.Get(q => q.Id == id);
             if (vehicle == null)
             {
                 return NotFound();
             }
 
-            //_context.Vehicles.Remove(vehicle);
-            //await _context.SaveChangesAsync();
             await _unitOfWork.Vehicles.Delete(id);
             await _unitOfWork.Save(HttpContext);
 
             return NoContent();
         }
 
-        //private bool VehicleExists(int id)
-
-        private async Task<bool> VehicleExists(int d)
+        private async Task<bool> VehicleExists(int id)
         {
-            //return (_context.Vehicles?.Any(e => e.Id == id)).GetValueOrDefault();
-            var vehicle = await _unitOfWork.Vehicles.Get(q => q.Id == d);
-            return vehicle != null;
+            var vehicle = await _unitOfWork.Vehicles.Get(q => q.Id == id);
+            return vehicle == null;
         }
     }
 }
